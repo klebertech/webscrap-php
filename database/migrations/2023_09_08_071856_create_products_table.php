@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('price');
             $table->text('link');
             $table->string('website');
-            $table->foreignId('search_id')->constrained();
+            $table->foreignId('search_id');
             $table->timestamps();
         });
     }
