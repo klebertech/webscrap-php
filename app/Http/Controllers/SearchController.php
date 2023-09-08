@@ -2,65 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\Search;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SearchController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
          return Inertia::render('SearchForm', []);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
-    }
+      $validated = $request->validate([
+        'searchWord' => 'required|string|max:255',
+        'category' => 'required|string|max:255',
+        'website' => 'required|string|max:255'
+      ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Search $search)
-    {
-        //
-    }
+      $newSearch = DB::table('searches')
+        ->join('products', 'searches.id', '=', 'products.search_id')
+        ->where('searches.searchWord', '=', $validated['searchWord'])
+        ->where('searches.category', '=', $validated['category'])
+        ->where('searches.website', '=', $validated['website'])
+        ->get();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Search $search)
-    {
-        //
-    }
+      if(!empty($newSearch->toArray())){
+        return Inertia::render('SearchForm', [
+          'products' => $newSearch,
+        ]);
+      }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Search $search)
-    {
-        //
-    }
+      $search = new Search;
+      $search->category = $validated['category'];
+      $search->website = $validated['website'];
+      $search->searchWord = $validated['searchWord'];
+      $search->save();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Search $search)
-    {
-        //
+      $scrap = new ScraperController;
+
+      switch ($validated['website']) {
+        case 'MercadoLivre':
+          $data = $scrap->meli($validated['category'], $validated['searchWord']);
+          break;
+        case 'Buscape':
+          $data = $scrap->buscape($validated['category'], $validated['searchWord']);
+          break;
+        default:
+          $meli = $scrap->meli($validated['category'], $validated['searchWord']);
+          $buscape = $scrap->buscape($validated['category'], $validated['searchWord']);
+          $data = array_merge($meli, $buscape);
+      }
+
+      foreach($data as $product){
+        $search->products()->create([
+          'photo' => $product['photo'],
+          'description' => $product['description'],
+          'category' => $validated['category'],
+          'price' => $product['price'],
+          'link' => $product['link'],
+          'website' => $product['website'],
+        ]);
+      }
+
+      $getProducts = DB::table('searches')
+        ->join('products', 'searches.id', '=', 'products.search_id')
+        ->where('searches.searchWord', '=', $validated['searchWord'])
+        ->where('searches.category', '=', $validated['category'])
+        ->where('searches.website', '=', $validated['website'])
+        ->get();
+      return Inertia::render('SearchForm', [
+        'products' => $getProducts,
+      ]);
     }
 }

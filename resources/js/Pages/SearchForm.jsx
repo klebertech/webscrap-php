@@ -13,7 +13,7 @@ export default function SearchForm({products}) {
     console.log(products);
     const submit = (e) => {
         e.preventDefault();
-        post(route('products.store'), { onSuccess: () => reset() });
+        post(route('search.store'), { onSuccess: () => reset() });
     };
 
     return (
