@@ -36,8 +36,8 @@ export default function SearchForm({products}) {
                   onChange={e => setData('category', e.target.value)}
                 >
                   <option value='tv'>TV</option>
-                  <option value='geladeira'>Geladeira</option>
-                  <option value='celular'>Celular</option>
+                  <option value='geladeira'>Geladeiras</option>
+                  <option value='celular'>Celulares</option>
                 </select>
               </div>
               <textarea
